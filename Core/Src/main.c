@@ -52,9 +52,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 
-void light_up(void);
-void set_direction_lights(uint8_t Count, GPIO_PinState red, GPIO_PinState yellow, GPIO_PinState green);
-void light_sequency(uint8_t Count, uint32_t GreenDelayTime);
+void TrafficLight_Control(void);
+void Set_Lights_Direction(uint8_t Count, GPIO_PinState red, GPIO_PinState yellow, GPIO_PinState green);
+void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime);
 /* USER CODE BEGIN PFP */
 uint16_t redPins[4]    			= {TL_Pin_Red_1, TL_Pin_Red_2, TL_Pin_Red_3, TL_Pin_Red_4};
 uint16_t yellowPins[4] 			= {TL_Pin_Yellow_1, TL_Pin_Yellow_2, TL_Pin_Yellow_3, TL_Pin_Yellow_4};
@@ -65,11 +65,12 @@ uint8_t starvation[4] 			= {0, 0, 0, 0};          // For S, N, E, W
 uint8_t starvationResetActive 	= 0;    // Flag for forced serve mode
 uint32_t GreenDelayTime			= 0;
 uint8_t Count					= 0;
-uint8_t activeFirstSensors 		= 0;
-uint8_t activeSecondSensors 	= 0;
+uint8_t u8IRDetected		 	= 0;
 uint8_t u8ActualCount			= 0;
 bool bStarvation				= false;
 uint8_t STARVATION_THRESHOLD 	= 3;
+uint32_t u32LONGBLINKING	  	= 3000;
+uint32_t u32SHORTBLINKING	  	= 1500;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -114,7 +115,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  light_up(); // run selected traffic light logic
+	  TrafficLight_Control(); // run selected traffic light logic
   }
 
 }
@@ -123,30 +124,30 @@ int main(void)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-void set_direction_lights(uint8_t Count, GPIO_PinState red, GPIO_PinState yellow, GPIO_PinState green)
+void Set_Lights_Direction(uint8_t Count, GPIO_PinState red, GPIO_PinState yellow, GPIO_PinState green)
 {
     HAL_GPIO_WritePin(GPIOC, redPins[Count], red);
     HAL_GPIO_WritePin(GPIOC, yellowPins[Count], yellow);
     HAL_GPIO_WritePin(GPIOC, greenPins[Count], green);
 }
 
-void light_sequency(uint8_t Count, uint32_t GreenDelayTime)
+void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime)
 {
-	set_direction_lights(Count, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET);
-	set_direction_lights(Count, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_SET); // Green
+	Set_Lights_Direction(Count, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET);
+	Set_Lights_Direction(Count, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_SET); // Green
 	HAL_Delay(GreenDelayTime);
 
-	set_direction_lights(Count, GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET); // Yellow
+	Set_Lights_Direction(Count, GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET); // Yellow
 	HAL_Delay(2000);
 
-	set_direction_lights(Count, GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_RESET); // Red
+	Set_Lights_Direction(Count, GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_RESET); // Red
 	HAL_Delay(2000);
 
 	starvation[Count] = starvation[Count] + 1;		// Increase starvation value for this direction
 }
 
 
-void light_up(void)
+void TrafficLight_Control(void)
 {
 	GPIO_PinState s1 = HAL_GPIO_ReadPin(GPIOB, sensorPins[Count]);
 	GPIO_PinState s2 = HAL_GPIO_ReadPin(GPIOB, sensor2Pins[Count]);
@@ -165,12 +166,12 @@ void light_up(void)
 		{
 			if(s1 == GPIO_PIN_RESET && s2 == GPIO_PIN_RESET)
 			{
-				light_sequency(Count,3000);
+				Light_Sequency(Count,u32LONGBLINKING);
 			}
 
 			else
 			{
-				light_sequency(Count,1500);
+				Light_Sequency(Count,u32SHORTBLINKING);
 			}
 		}
 	}
@@ -182,36 +183,36 @@ void light_up(void)
 			if (HAL_GPIO_ReadPin(GPIOB, sensorPins[i]) == GPIO_PIN_RESET ||
 					HAL_GPIO_ReadPin(GPIOB, sensor2Pins[i]) == GPIO_PIN_RESET)
 			{
-				activeFirstSensors = activeFirstSensors + 1;
+				u8IRDetected = u8IRDetected + 1;
 			}
 		}
 
 		// All first sensors inactive → simple 15s
-		if (activeFirstSensors == 0)
+		if (u8IRDetected == 0)
 		{
-			light_sequency(Count,1500);
+			Light_Sequency(Count,u32SHORTBLINKING);
 		}
 
-		else if (activeFirstSensors == 4)
-		{
-			// All first sensors active → check second sensor
-			if (s2 == GPIO_PIN_RESET)
-			{
-				light_sequency(Count,3000);
-			}
-
-			else
-			{
-				light_sequency(Count,1500);
-			}
-		}
+//		else if (u8IRDetected == 4)
+//		{
+//			// All first sensors active → check second sensor
+//			if (s2 == GPIO_PIN_RESET)
+//			{
+//				Light_Sequency(Count,u32LONGBLINKING);
+//			}
+//
+//			else
+//			{
+//				Light_Sequency(Count,u32SHORTBLINKING);
+//			}
+//		}
 
 		// Condition: 1–3 first sensors active
 		else
 		{
 			if (s1 == GPIO_PIN_RESET && s2 == GPIO_PIN_RESET)
 			{
-				light_sequency(Count,3000);
+				Light_Sequency(Count,u32LONGBLINKING);
 				if(starvation[Count] >= STARVATION_THRESHOLD)
 				{
 					bStarvation = true;
@@ -222,7 +223,7 @@ void light_up(void)
 			else if (s1 == GPIO_PIN_RESET || s2 == GPIO_PIN_RESET)
 			{
 
-				light_sequency(Count,1500);
+				Light_Sequency(Count,u32SHORTBLINKING);
 				if(starvation[Count] >= STARVATION_THRESHOLD)
 				{
 					bStarvation = true;
@@ -231,8 +232,7 @@ void light_up(void)
 			}
 		}
 	}
-	activeFirstSensors = 0; 	//Reset Input Reading
-	activeSecondSensors = 0; 	//Reset Input Reading
+	u8IRDetected = 0; 	//Reset Input Reading
 	Count = (Count + 1) % 4; // next direction
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -336,21 +336,21 @@ static void MX_GPIO_Init(void)
 
 
   // Configure PC0 (Red), PA1 (Yellow), PA3 (Green) as Output
-	GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2|
-						  GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5|
-						  GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8|
-						  GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin =		GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2|
+		  	  	  	  	  	GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5|
+							GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8|
+							GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-	// Configure PB0 (Sensor) as Input
-	GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|
-						  GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;  // For push-button. If using IR sensor, adjust as needed.
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  // Configure PB0 (Sensor) as Input
+  GPIO_InitStruct.Pin = 	GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|
+					  	  	GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;  // For push-button. If using IR sensor, adjust as needed.
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_1, GPIO_PIN_SET);
