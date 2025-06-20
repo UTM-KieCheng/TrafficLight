@@ -71,6 +71,7 @@ bool bStarvation				= false;
 uint8_t STARVATION_THRESHOLD 	= 3;
 uint32_t u32LONGBLINKING	  	= 3000;
 uint32_t u32SHORTBLINKING	  	= 1500;
+uint32_t u32YellowDelayTime		= 2000;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,16 +120,38 @@ int main(void)
   }
 
 }
-
   /* USER CODE END 3 */
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Set_Lights_Direction(uint8_t Count, GPIO_PinState red, GPIO_PinState yellow, GPIO_PinState green)
 {
-    HAL_GPIO_WritePin(GPIOC, redPins[Count], red);
-    HAL_GPIO_WritePin(GPIOC, yellowPins[Count], yellow);
-    HAL_GPIO_WritePin(GPIOC, greenPins[Count], green);
+	if(red == GPIO_PIN_RESET)
+	{
+		GPIOC->ODR &= ~redPins[Count];
+	}
+	else if(red == GPIO_PIN_SET)
+	{
+		GPIOC->ODR |= redPins[Count];
+	}
+
+	if(yellow == GPIO_PIN_RESET)
+	{
+		GPIOC->ODR &= ~yellowPins[Count];
+	}
+	else if(yellow == GPIO_PIN_SET)
+	{
+		GPIOC->ODR |= yellowPins[Count];
+	}
+
+	if(green == GPIO_PIN_RESET)
+	{
+		GPIOC->ODR &= ~greenPins[Count];
+	}
+	else if(green == GPIO_PIN_SET)
+	{
+		GPIOC->ODR |= greenPins[Count];
+	}
 }
 
 void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime)
@@ -138,10 +161,10 @@ void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime)
 	HAL_Delay(GreenDelayTime);
 
 	Set_Lights_Direction(Count, GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET); // Yellow
-	HAL_Delay(2000);
+	HAL_Delay(u32YellowDelayTime);
 
 	Set_Lights_Direction(Count, GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_RESET); // Red
-	HAL_Delay(2000);
+	HAL_Delay(u32YellowDelayTime);
 
 	starvation[Count] = starvation[Count] + 1;		// Increase starvation value for this direction
 }
@@ -149,8 +172,8 @@ void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime)
 
 void TrafficLight_Control(void)
 {
-	GPIO_PinState s1 = HAL_GPIO_ReadPin(GPIOB, sensorPins[Count]);
-	GPIO_PinState s2 = HAL_GPIO_ReadPin(GPIOB, sensor2Pins[Count]);
+	GPIO_PinState s1 = GPIOB->IDR & sensorPins[Count];
+	GPIO_PinState s2 = GPIOB->IDR & sensor2Pins[Count];
 
 	if(bStarvation == true)
 	{
@@ -180,8 +203,8 @@ void TrafficLight_Control(void)
 		// Check if at least one of first sensors is active
 		for (int i = 0; i < 4; i++)
 		{
-			if (HAL_GPIO_ReadPin(GPIOB, sensorPins[i]) == GPIO_PIN_RESET ||
-					HAL_GPIO_ReadPin(GPIOB, sensor2Pins[i]) == GPIO_PIN_RESET)
+			if ((GPIOB->IDR & sensorPins[i]) == GPIO_PIN_RESET ||
+					(GPIOB->IDR & sensor2Pins[i]) == GPIO_PIN_RESET)
 			{
 				u8IRDetected = u8IRDetected + 1;
 			}
@@ -336,35 +359,62 @@ static void MX_GPIO_Init(void)
 
 
   // Configure PC0 (Red), PA1 (Yellow), PA3 (Green) as Output
-  GPIO_InitStruct.Pin =		GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2|
-		  	  	  	  	  	GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5|
-							GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8|
-							GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+//  GPIO_InitStruct.Pin =		GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2|
+//		  	  	  	  	  	GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5|
+//							GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8|
+//							GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11;
+//  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+//  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+//
+//  // Configure PB0 (Sensor) as Input
+//  GPIO_InitStruct.Pin = 	GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|
+//					  	  	GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+//  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+//  GPIO_InitStruct.Pull = GPIO_PULLUP;  // For push-button. If using IR sensor, adjust as needed.
+//  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  // Configure PB0 (Sensor) as Input
-  GPIO_InitStruct.Pin = 	GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|
-					  	  	GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;  // For push-button. If using IR sensor, adjust as needed.
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  // Enable GPIOB and GPIOC clocks
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN; // RCC->AHB1ENR |= (1 << 1) | (1 << 2);
+
+  // Set PC0–PC11 as output, push-pull, no-pull
+  GPIOC->MODER  |=  0x555555;       // Set to output mode (01)
+  GPIOC->OTYPER &= ~(0x0FFF);       // Push-pull (0)
+  GPIOC->PUPDR  &= ~(0xFFFFFF);     // No pull-up/down (00)
+
+  // Set PB0–PB7 as input with pull-up
+  GPIOB->MODER &= ~(0xFFFF);        // Input mode (00)
+  GPIOB->PUPDR &= ~(0xFFFF);        // Clear PUPDR
+  GPIOB->PUPDR |=  0x5555;          // Set pull-up (01)
+
+  GPIOC->ODR |= GPIO_PIN_0;			// TL_Pin_Red_1
+  GPIOC->ODR |= GPIO_PIN_3;			// TL_Pin_Red_2
+  GPIOC->ODR |= GPIO_PIN_6;			// TL_Pin_Red_3
+  GPIOC->ODR |= GPIO_PIN_9;			// TL_Pin_Red_4
+  GPIOC->ODR &= ~GPIO_PIN_1;		// TL_Pin_Yellow_1
+  GPIOC->ODR &= ~GPIO_PIN_4;		// TL_Pin_Yellow_2
+  GPIOC->ODR &= ~GPIO_PIN_7;		// TL_Pin_Yellow_3
+  GPIOC->ODR &= ~GPIO_PIN_10;		// TL_Pin_Yellow_4
+  GPIOC->ODR &= ~GPIO_PIN_2;		// TL_Pin_Green_1
+  GPIOC->ODR &= ~GPIO_PIN_5;		// TL_Pin_Green_2
+  GPIOC->ODR &= ~GPIO_PIN_8;		// TL_Pin_Green_3
+  GPIOC->ODR &= ~GPIO_PIN_11;		// TL_Pin_Green_4
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_1, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_2, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_3, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_4, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_1, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_2, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_3, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_4, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_1, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_2, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_3, GPIO_PIN_RESET);
+//  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_4, GPIO_PIN_RESET);
+
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_1, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_2, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_3, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Red_4, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_1, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_2, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_3, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Yellow_4, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_1, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_2, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_3, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(TL_GPIO_Port, TL_Pin_Green_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
