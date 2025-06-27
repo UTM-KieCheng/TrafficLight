@@ -59,7 +59,7 @@ void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime);
 uint16_t redPins[4]    			= {TL_Pin_Red_1, TL_Pin_Red_2, TL_Pin_Red_3, TL_Pin_Red_4};
 uint16_t yellowPins[4] 			= {TL_Pin_Yellow_1, TL_Pin_Yellow_2, TL_Pin_Yellow_3, TL_Pin_Yellow_4};
 uint16_t greenPins[4]  			= {TL_Pin_Green_1, TL_Pin_Green_2, TL_Pin_Green_3, TL_Pin_Green_4};
-uint16_t sensorPins[4] 			= {IR_Sensor1_Pin_1, IR_Sensor1_Pin_2, IR_Sensor1_Pin_3, IR_Sensor1_Pin_4};
+uint16_t sensor1Pins[4] 			= {IR_Sensor1_Pin_1, IR_Sensor1_Pin_2, IR_Sensor1_Pin_3, IR_Sensor1_Pin_4};
 uint16_t sensor2Pins[4] 		= {IR_Sensor2_Pin_1, IR_Sensor2_Pin_2, IR_Sensor2_Pin_3, IR_Sensor2_Pin_4};
 uint8_t starvation[4] 			= {0, 0, 0, 0};          // For S, N, E, W
 uint8_t starvationResetActive 	= 0;    // Flag for forced serve mode
@@ -172,7 +172,7 @@ void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime)
 
 void TrafficLight_Control(void)
 {
-	GPIO_PinState s1 = GPIOB->IDR & sensorPins[Count];
+	GPIO_PinState s1 = GPIOB->IDR & sensor1Pins[Count];
 	GPIO_PinState s2 = GPIOB->IDR & sensor2Pins[Count];
 
 	if(bStarvation == true)
@@ -203,7 +203,7 @@ void TrafficLight_Control(void)
 		// Check if at least one of first sensors is active
 		for (int i = 0; i < 4; i++)
 		{
-			if ((GPIOB->IDR & sensorPins[i]) == GPIO_PIN_RESET ||
+			if ((GPIOB->IDR & sensor1Pins[i]) == GPIO_PIN_RESET ||
 					(GPIOB->IDR & sensor2Pins[i]) == GPIO_PIN_RESET)
 			{
 				u8IRDetected = u8IRDetected + 1;
