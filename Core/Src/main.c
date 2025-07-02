@@ -59,18 +59,18 @@ void Light_Sequency(uint8_t Count, uint32_t GreenDelayTime);
 uint16_t redPins[4]    			= {TL_Pin_Red_1, TL_Pin_Red_2, TL_Pin_Red_3, TL_Pin_Red_4};
 uint16_t yellowPins[4] 			= {TL_Pin_Yellow_1, TL_Pin_Yellow_2, TL_Pin_Yellow_3, TL_Pin_Yellow_4};
 uint16_t greenPins[4]  			= {TL_Pin_Green_1, TL_Pin_Green_2, TL_Pin_Green_3, TL_Pin_Green_4};
-uint16_t sensor1Pins[4] 			= {IR_Sensor1_Pin_1, IR_Sensor1_Pin_2, IR_Sensor1_Pin_3, IR_Sensor1_Pin_4};
+uint16_t sensor1Pins[4] 		= {IR_Sensor1_Pin_1, IR_Sensor1_Pin_2, IR_Sensor1_Pin_3, IR_Sensor1_Pin_4};
 uint16_t sensor2Pins[4] 		= {IR_Sensor2_Pin_1, IR_Sensor2_Pin_2, IR_Sensor2_Pin_3, IR_Sensor2_Pin_4};
 uint8_t starvation[4] 			= {0, 0, 0, 0};          // For S, N, E, W
-uint8_t starvationResetActive 	= 0;    // Flag for forced serve mode
+uint8_t starvationResetActive 		= 0;    // Flag for forced serve mode
 uint32_t GreenDelayTime			= 0;
-uint8_t Count					= 0;
+uint8_t Count				= 0;
 uint8_t u8IRDetected		 	= 0;
 uint8_t u8ActualCount			= 0;
-bool bStarvation				= false;
-uint8_t STARVATION_THRESHOLD 	= 3;
-uint32_t u32LONGBLINKING	  	= 3000;
-uint32_t u32SHORTBLINKING	  	= 1500;
+bool bStarvation			= false;
+uint8_t STARVATION_THRESHOLD 		= 3;
+uint32_t u32LONGBLINKING	  	= 3000; //30000 in real case
+uint32_t u32SHORTBLINKING	  	= 1500; //150000 in real case
 uint32_t u32YellowDelayTime		= 2000;
 /* USER CODE END PFP */
 
