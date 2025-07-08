@@ -1,8 +1,8 @@
-../Core/Src/main.c:85:5:main	1
-../Core/Src/main.c:127:6:Set_Lights_Direction	1
-../Core/Src/main.c:134:6:Light_Sequency	1
-../Core/Src/main.c:150:6:TrafficLight_Control	16
-../Core/Src/main.c:243:6:SystemClock_Config	3
-../Core/Src/main.c:291:13:MX_USART2_UART_Init	2
-../Core/Src/main.c:324:13:MX_GPIO_Init	1
-../Core/Src/main.c:395:6:Error_Handler	1
+../Core/Src/main.c:87:5:main	1
+../Core/Src/main.c:128:6:Set_Lights_Direction	7
+../Core/Src/main.c:158:6:Light_Sequency	1
+../Core/Src/main.c:174:6:TrafficLight_Control	16
+../Core/Src/main.c:267:6:SystemClock_Config	3
+../Core/Src/main.c:315:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:348:13:MX_GPIO_Init	1
+../Core/Src/main.c:446:6:Error_Handler	1

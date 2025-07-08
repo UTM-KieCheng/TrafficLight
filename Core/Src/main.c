@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdbool.h>
+#include <stm32f4xx.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -62,13 +63,13 @@ uint16_t greenPins[4]  			= {TL_Pin_Green_1, TL_Pin_Green_2, TL_Pin_Green_3, TL_
 uint16_t sensor1Pins[4] 		= {IR_Sensor1_Pin_1, IR_Sensor1_Pin_2, IR_Sensor1_Pin_3, IR_Sensor1_Pin_4};
 uint16_t sensor2Pins[4] 		= {IR_Sensor2_Pin_1, IR_Sensor2_Pin_2, IR_Sensor2_Pin_3, IR_Sensor2_Pin_4};
 uint8_t starvation[4] 			= {0, 0, 0, 0};          // For S, N, E, W
-uint8_t starvationResetActive 		= 0;    // Flag for forced serve mode
+uint8_t starvationResetActive 	= 0;    // Flag for forced serve mode
 uint32_t GreenDelayTime			= 0;
-uint8_t Count				= 0;
+uint8_t Count					= 0;
 uint8_t u8IRDetected		 	= 0;
 uint8_t u8ActualCount			= 0;
-bool bStarvation			= false;
-uint8_t STARVATION_THRESHOLD 		= 3;
+bool bStarvation				= false;
+uint8_t STARVATION_THRESHOLD 	= 3;
 uint32_t u32LONGBLINKING	  	= 3000; //30000 in real case
 uint32_t u32SHORTBLINKING	  	= 1500; //150000 in real case
 uint32_t u32YellowDelayTime		= 2000;
@@ -321,14 +322,14 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 1 */
 
   /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Instance 			= USART2;
+  huart2.Init.BaudRate 		= 115200;
+  huart2.Init.WordLength 	= UART_WORDLENGTH_8B;
+  huart2.Init.StopBits 		= UART_STOPBITS_1;
+  huart2.Init.Parity 		= UART_PARITY_NONE;
+  huart2.Init.Mode 			= UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl		= UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling 	= UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
